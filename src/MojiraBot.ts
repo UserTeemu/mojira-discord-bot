@@ -1,16 +1,10 @@
-import { ChannelLogsQueryOptions, Client, Intents, Message, TextChannel } from 'discord.js';
+import { Client, Intents, TextChannel } from 'discord.js';
 import * as log4js from 'log4js';
 import { Client as JiraClient } from 'jira.js';
 import BotConfig from './BotConfig';
 import ErrorEventHandler from './events/discord/ErrorEventHandler';
 import EventRegistry from './events/EventRegistry';
-import MessageDeleteEventHandler from './events/message/MessageDeleteEventHandler';
 import MessageEventHandler from './events/message/MessageEventHandler';
-import MessageUpdateEventHandler from './events/message/MessageUpdateEventHandler';
-import ReactionAddEventHandler from './events/reaction/ReactionAddEventHandler';
-import ReactionRemoveEventHandler from './events/reaction/ReactionRemoveEventHandler';
-import RequestEventHandler from './events/request/RequestEventHandler';
-import RequestResolveEventHandler from './events/request/RequestResolveEventHandler';
 import FilterFeedTask from './tasks/FilterFeedTask';
 import TaskScheduler from './tasks/TaskScheduler';
 import VersionFeedTask from './tasks/VersionFeedTask';
@@ -67,130 +61,7 @@ export default class MojiraBot {
 			// Register events.
 			EventRegistry.setClient( this.client );
 			EventRegistry.add( new ErrorEventHandler() );
-
-			for ( const group of BotConfig.roleGroups ) {
-				const channel = await DiscordUtil.getChannel( group.channel );
-				if ( channel && channel instanceof TextChannel ) {
-					try {
-						try {
-							await RoleSelectionUtil.updateRoleSelectionMessage( group );
-						} catch ( error ) {
-							MojiraBot.logger.error( error );
-						}
-					} catch ( err ) {
-						this.logger.error( err );
-					}
-				}
-			}
-
-			const requestChannels: TextChannel[] = [];
-			const internalChannels = new Map<string, string>();
-
-			if ( BotConfig.request.channels ) {
-				for ( let i = 0; i < BotConfig.request.channels.length; i++ ) {
-					const requestChannelId = BotConfig.request.channels[i];
-					const internalChannelId = BotConfig.request.internalChannels[i];
-					try {
-						const requestChannel = await DiscordUtil.getChannel( requestChannelId );
-						const internalChannel = await DiscordUtil.getChannel( internalChannelId );
-						if ( requestChannel instanceof TextChannel && internalChannel instanceof TextChannel ) {
-							requestChannels.push( requestChannel );
-							internalChannels.set( requestChannelId, internalChannelId );
-
-							// https://stackoverflow.com/questions/55153125/fetch-more-than-100-messages
-							const allMessages: Message[] = [];
-							let lastId: string | undefined;
-							let continueSearch = true;
-
-							while ( continueSearch ) {
-								const options: ChannelLogsQueryOptions = { limit: 50 };
-								if ( lastId ) {
-									options.before = lastId;
-								}
-								const messages = await internalChannel.messages.fetch( options );
-								allMessages.push( ...messages.array() );
-								lastId = messages.last()?.id;
-								if ( messages.size !== 50 || !lastId ) {
-									continueSearch = false;
-								}
-							}
-							this.logger.info( `Fetched ${ allMessages.length } messages from "${ internalChannel.name }"` );
-
-							// Resolve pending resolved requests
-							const handler = new RequestResolveEventHandler( this.client.user.id );
-							for ( const message of allMessages ) {
-								message.reactions.cache.forEach( async reaction => {
-									const users = await reaction.users.fetch();
-									const user = users.array().find( v => v.id !== this.client.user.id );
-									if ( user ) {
-										try {
-											await handler.onEvent( reaction, user );
-										} catch ( error ) {
-											MojiraBot.logger.error( error );
-										}
-									}
-								} );
-							}
-						}
-					} catch ( err ) {
-						this.logger.error( err );
-					}
-				}
-
-				const newRequestHandler = new RequestEventHandler( internalChannels );
-				for ( const requestChannel of requestChannels ) {
-					this.logger.info( `Catching up on requests from #${ requestChannel.name }...` );
-
-					let lastId: string | undefined = undefined;
-
-					let pendingRequests: Message[] = [];
-
-					let foundLastBotReaction = false;
-					while ( !foundLastBotReaction ) {
-						let fetchedMessages = await requestChannel.messages.fetch( { before: lastId } );
-
-						if ( fetchedMessages.size === 0 ) break;
-
-						fetchedMessages = fetchedMessages.sort( ( a: Message, b: Message ) => {
-							return a.createdAt < b.createdAt ? -1 : 1;
-						} );
-
-						for ( const messageId of fetchedMessages.keys() ) {
-							const message = fetchedMessages.get( messageId );
-							const hasBotReaction = message.reactions.cache.find( reaction => reaction.me ) !== undefined;
-							const hasReactions = message.reactions.cache.size > 0;
-
-							if ( hasBotReaction ) {
-								foundLastBotReaction = true;
-							} else if ( !hasReactions ) {
-								pendingRequests.push( message );
-							}
-						}
-
-						lastId = fetchedMessages.firstKey();
-					}
-
-					pendingRequests = pendingRequests.sort( ( a: Message, b: Message ) => {
-						return a.createdAt < b.createdAt ? -1 : 1;
-					} );
-
-					for ( const message of pendingRequests ) {
-						try {
-							await newRequestHandler.onEvent( message );
-						} catch ( error ) {
-							MojiraBot.logger.error( error );
-						}
-					}
-				}
-
-				this.logger.info( 'Fully caught up on requests.' );
-			}
-
-			EventRegistry.add( new ReactionAddEventHandler( this.client.user.id, internalChannels ) );
-			EventRegistry.add( new ReactionRemoveEventHandler( this.client.user.id ) );
-			EventRegistry.add( new MessageEventHandler( this.client.user.id, internalChannels ) );
-			EventRegistry.add( new MessageUpdateEventHandler( this.client.user.id, internalChannels ) );
-			EventRegistry.add( new MessageDeleteEventHandler( this.client.user.id, internalChannels ) );
+			EventRegistry.add( new MessageEventHandler( this.client.user.id ) );
 
 			// #region Schedule tasks.
 			// Filter feed tasks.
@@ -215,12 +86,6 @@ export default class MojiraBot {
 				await this.client.user.setActivity( '!jira help' );
 			} catch ( error ) {
 				MojiraBot.logger.error( error );
-			}
-
-			const homeChannel = await DiscordUtil.getChannel( BotConfig.homeChannel );
-
-			if ( homeChannel instanceof TextChannel ) {
-				await ( homeChannel as TextChannel ).send( 'Hey, I have been restarted!' );
 			}
 		} catch ( err ) {
 			this.logger.error( `MojiraBot could not be started: ${ err }` );
