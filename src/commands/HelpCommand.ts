@@ -22,7 +22,9 @@ export default class HelpCommand extends PrefixCommand {
 					
 					\`!jira ping\` - Sends a message to check if the bot is running.
 					
-					\`!jira search <text>\` - Searches for text and returns the results from the bug tracker.`
+					\`!jira search <text>\` - Searches for text and returns the results from the bug tracker.
+					
+					\`!jira feed <subcommand> [arguments]\` - Commands for custom bug feeds. Use \`!jira feed help\` for help with custom feeds.`
 				)
 				.setFooter( message.author.tag, message.author.avatarURL() );
 			await message.channel.send( embed );

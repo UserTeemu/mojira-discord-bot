@@ -2,6 +2,7 @@ import { Client } from 'discord.js';
 import config from 'config';
 import MojiraBot from './MojiraBot';
 import { VersionChangeType } from './tasks/VersionFeedTask';
+import { ClientConfig } from 'pg';
 
 function getOrDefault<T>( configPath: string, defaultValue: T ): T {
 	if ( !config.has( configPath ) ) MojiraBot.logger.debug( `config ${ configPath } not set, assuming default` );
@@ -67,6 +68,9 @@ export default class BotConfig {
 	public static filterFeeds: FilterFeedConfig[];
 	public static versionFeeds: VersionFeedConfig[];
 
+	// Custom feeds
+	public static databaseConfig: ClientConfig;
+
 	public static init(): void {
 		this.debug = getOrDefault( 'debug', false );
 		this.logDirectory = getOrDefault( 'logDirectory', false );
@@ -88,6 +92,8 @@ export default class BotConfig {
 
 		this.filterFeeds = config.get( 'filterFeeds' );
 		this.versionFeeds = config.get( 'versionFeeds' );
+
+		this.databaseConfig = config.get( 'databaseConfig' );
 	}
 
 	public static async login( client: Client ): Promise<boolean> {

@@ -9,7 +9,7 @@ import FilterFeedTask from './tasks/FilterFeedTask';
 import TaskScheduler from './tasks/TaskScheduler';
 import VersionFeedTask from './tasks/VersionFeedTask';
 import DiscordUtil from './util/DiscordUtil';
-import { RoleSelectionUtil } from './util/RoleSelectionUtil';
+import CustomFeedDatabaseUtil from './util/CustomFeedDatabaseUtil';
 
 /**
  * Core class of MojiraBot
@@ -58,6 +58,9 @@ export default class MojiraBot {
 			this.running = true;
 			this.logger.info( `MojiraBot has been started successfully. Logged in as ${ this.client.user.tag }` );
 
+			// Connect to database
+			CustomFeedDatabaseUtil.connect();
+
 			// Register events.
 			EventRegistry.setClient( this.client );
 			EventRegistry.add( new ErrorEventHandler() );
@@ -88,7 +91,7 @@ export default class MojiraBot {
 				MojiraBot.logger.error( error );
 			}
 		} catch ( err ) {
-			this.logger.error( `MojiraBot could not be started: ${ err }` );
+			this.logger.error( `MojiraBot could not be started: ${ err.stack }` );
 			await this.shutdown();
 		}
 	}
@@ -102,6 +105,7 @@ export default class MojiraBot {
 		this.logger.info( 'Initiating graceful shutdown...' );
 
 		try {
+			CustomFeedDatabaseUtil.disconnect();
 			TaskScheduler.clearAll();
 			this.client.destroy();
 			this.running = false;

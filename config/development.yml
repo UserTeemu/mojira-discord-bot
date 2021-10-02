@@ -1,0 +1,27 @@
+# Settings for Mojira Discord bot
+
+debug: true
+
+owners:
+  - '342589551618949121' # UserTeemu
+
+maxSearchResults: 20
+
+projects:
+  - 'BDS'
+  - 'MC'
+  - 'MCD'
+  - 'MCL'
+  - 'MCPE'
+  - 'REALMS'
+
+filterFeeds:
+  - jql: project = MC AND resolved > -1m AND resolution = Fixed AND fixVersion in unreleasedVersions()
+    channel: '888798819972706334'
+    publish: true
+    interval: 30000
+    filterFeedEmoji: '🎉'
+    title: '{{num}} tickets have just been resolved as Fixed!'
+    titleSingle: This ticket has just been resolved as Fixed!
+
+versionFeeds:

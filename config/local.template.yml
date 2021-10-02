@@ -11,3 +11,11 @@
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 token: <your bot token>
+
+databaseConfig:
+  - host: "<your postgres database host>"
+  - port: <your postgres database port>
+  - user: "<your postgres database username>"
+  - password: "<your postgres database password>"
+  - database: "<your postgres database name>"
+  
