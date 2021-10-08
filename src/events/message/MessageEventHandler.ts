@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-import BotConfig from '../../BotConfig';
 import CommandExecutor from '../../commands/CommandExecutor';
 import DiscordUtil from '../../util/DiscordUtil';
 import EventHandler from '../EventHandler';

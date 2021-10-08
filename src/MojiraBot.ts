@@ -1,4 +1,4 @@
-import { Client, Intents, TextChannel } from 'discord.js';
+import { Client, Intents } from 'discord.js';
 import * as log4js from 'log4js';
 import { Client as JiraClient } from 'jira.js';
 import BotConfig from './BotConfig';
@@ -6,6 +6,7 @@ import ErrorEventHandler from './events/discord/ErrorEventHandler';
 import EventRegistry from './events/EventRegistry';
 import MessageEventHandler from './events/message/MessageEventHandler';
 import FilterFeedTask from './tasks/FilterFeedTask';
+import CachedFilterFeedTask from './tasks/CachedFilterFeedTask';
 import TaskScheduler from './tasks/TaskScheduler';
 import VersionFeedTask from './tasks/VersionFeedTask';
 import DiscordUtil from './util/DiscordUtil';
@@ -69,10 +70,17 @@ export default class MojiraBot {
 			// #region Schedule tasks.
 			// Filter feed tasks.
 			for ( const config of BotConfig.filterFeeds ) {
-				TaskScheduler.addTask(
-					new FilterFeedTask( config, await DiscordUtil.getChannel( config.channel ) ),
-					config.interval
-				);
+				if ( config.cached ) {
+					TaskScheduler.addTask(
+						new CachedFilterFeedTask( config, await DiscordUtil.getChannel( config.channel ) ),
+						config.interval
+					);
+				} else {
+					TaskScheduler.addTask(
+						new FilterFeedTask( config, await DiscordUtil.getChannel( config.channel ) ),
+						config.interval
+					);
+				}
 			}
 
 			// Version feed tasks.
