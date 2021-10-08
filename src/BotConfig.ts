@@ -91,8 +91,8 @@ export default class BotConfig {
 
 		this.projects = config.get( 'projects' );
 
-		this.filterFeeds = config.get( 'filterFeeds' );
-		this.versionFeeds = config.get( 'versionFeeds' );
+		this.filterFeeds = getOrDefault( 'filterFeeds', [] );
+		this.versionFeeds = getOrDefault( 'versionFeeds', [] );
 
 		this.databaseConfig = config.get( 'databaseConfig' );
 	}
