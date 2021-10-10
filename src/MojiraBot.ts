@@ -60,7 +60,7 @@ export default class MojiraBot {
 			this.logger.info( `MojiraBot has been started successfully. Logged in as ${ this.client.user.tag }` );
 
 			// Connect to database
-			CustomFeedDatabaseUtil.connect();
+			await CustomFeedDatabaseUtil.connect();
 
 			// Register events.
 			EventRegistry.setClient( this.client );
@@ -113,7 +113,7 @@ export default class MojiraBot {
 		this.logger.info( 'Initiating graceful shutdown...' );
 
 		try {
-			CustomFeedDatabaseUtil.disconnect();
+			await CustomFeedDatabaseUtil.disconnect();
 			TaskScheduler.clearAll();
 			this.client.destroy();
 			this.running = false;
