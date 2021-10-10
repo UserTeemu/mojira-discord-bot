@@ -28,12 +28,14 @@ export interface RoleGroupConfig {
 
 export interface FilterFeedConfig {
 	jql: string;
+	jqlRemoved?: string;
 	channel: string;
 	interval: number;
 	filterFeedEmoji: string;
 	title: string;
 	titleSingle?: string;
 	publish?: boolean;
+	cached?: boolean;
 }
 
 export interface VersionFeedConfig {
@@ -50,8 +52,7 @@ export default class BotConfig {
 	public static debug: boolean;
 	public static logDirectory: false | string;
 
-	// TODO: make private again when /crosspost api endpoint is implemented into discord.js
-	public static token: string;
+	private static token: string;
 	public static owners: string[];
 
 	public static ticketUrlsCauseEmbed: boolean;
@@ -90,8 +91,8 @@ export default class BotConfig {
 
 		this.projects = config.get( 'projects' );
 
-		this.filterFeeds = config.get( 'filterFeeds' );
-		this.versionFeeds = config.get( 'versionFeeds' );
+		this.filterFeeds = getOrDefault( 'filterFeeds', [] );
+		this.versionFeeds = getOrDefault( 'versionFeeds', [] );
 
 		this.databaseConfig = config.get( 'databaseConfig' );
 	}
